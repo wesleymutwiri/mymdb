@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings 
+
 
 class MovieManager(models.Manager):
     def all_with_related_persons(self):
