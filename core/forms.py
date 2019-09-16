@@ -1,7 +1,7 @@
 from django import forms 
 from django.contrib.auth import get_user_model
 
-from core.models import Vote
+from core.models import Vote, Movie
 
 class VoteForm(forms.ModelForm):
     user = forms.ModelChoiceField(
@@ -15,7 +15,7 @@ class VoteForm(forms.ModelForm):
         disabled=True
     )
     value = forms.ChoiceField(
-        label = 'Vote'
+        label = 'Vote',
         widget = forms.RadioSelect,
         choices = Vote.VALUE_CHOICES,
     )
@@ -24,4 +24,3 @@ class VoteForm(forms.ModelForm):
         model = Vote 
         fields = (
             'value', 'user', 'movie',)
-        )

@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings 
-
+from django.db.models.aggregates import Sum 
 
 class MovieManager(models.Manager):
     def all_with_related_persons(self):
@@ -8,6 +8,11 @@ class MovieManager(models.Manager):
         qs = qs.select_related('director')
         qs = qs.prefetch_related('writers', 'actors')
         return qs 
+    
+    def all_with_related_persons_and_score(self):
+        qs = self.all_with_related_persons()
+        qs = qs.annotate(score=Sum('vote__value'))
+        return qs
 
 class Movie(models.Model):
     NOT_RATED = 0
@@ -109,7 +114,19 @@ class Role(models.Model):
         )
 
 
+class VoteManager(models.Manager):
+    def get_vote_or_unsaved_blank_vote(self, movie, user):
+        try:
+            return Vote.objects.get(
+                movie=movie, user=user
+            )
+        except Vote.DoesNotExist:
+            return Vote(
+                movie=movie, user=user
+            )
+
 class Vote(models.Model):
+
     UP = 1 
     DOWN = -1
     VALUE_CHOICES = (
@@ -121,5 +138,8 @@ class Vote(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE,)
     voted_on = models.DateTimeField(auto_now=True)
 
+    objects = VoteManager()
+
+    
     class Meta:
         unique_together = ('user', 'movie')
