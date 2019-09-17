@@ -1,13 +1,12 @@
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView, UpdateView, CreateView
-
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect 
 from django.urls import reverse 
 
 from core.models import Movie, Person, Vote 
-from core.forms import VoteForm
+from core.forms import VoteForm, MovieImageForm
 
 class MovieDetail(DetailView):
     queryset = (
@@ -38,7 +37,13 @@ class MovieDetail(DetailView):
             vote_form=VoteForm(instance=vote)
             ctx['vote_form'] = vote_form 
             ctx['vote_form_url'] = vote_form_url 
-            return ctx 
+        return ctx 
+
+    def movie_image_form(self):
+        if self.request.user.is_authenticated:
+            return MovieImageForm()
+        return None
+        
     model = Movie 
 
 
@@ -69,7 +74,6 @@ class CreateVote(LoginRequiredMixin, CreateView):
         return redirect(to=movie_detail_url)
 
 
-
 class UpdateVote(LoginRequiredMixin, UpdateView):
     form_class = VoteForm
     queryset = Vote.objects.all()
@@ -98,3 +102,27 @@ class UpdateVote(LoginRequiredMixin, UpdateView):
             'core:MovieDetail',
             kwargs = {'pk':movie_id})
         return redirect(to=movie_detail_url)
+
+
+class MovieImageUpload(LoginRequiredMixin, CreateView):
+    form_class = MovieImageForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['user'] = self.request.user.id 
+        initial['movie'] = self.kwargs['movie_id']
+        return initial 
+    
+    def render_to_response(self, context, **respone_kwargs):
+        movie_id = self.kwargs['movie_id']
+        movie_detail_url = reverse(
+            'core:MovieDetail',
+            kwargs={'pk':movie_id})
+        return redirect(to=movie_detail_url)
+
+    
+    def get_success_url(self):
+        movie_id = self.kwargs['movie_id']
+        movie_detail_url = reverse(
+            'core:MovieDetail', kwargs = {'pk': movie_id})
+        return movie_detail_url
